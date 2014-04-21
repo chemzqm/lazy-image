@@ -1,8 +1,8 @@
 # Lazy-image
 
-  Load image with concurrency, progress and error control.
+  Load image with progress and error control.
 
-  I hope you don't this to handle image loading :)
+  Seems Chrome not support reading the content-length of a download XHR, thus we don't know the percentage.
 
 ## Installation
 

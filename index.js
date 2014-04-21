@@ -1,7 +1,6 @@
 var XHRImage = require("xhr-image");
 var resize = require('resize');
 var removed = require('removed');
-var Batch = require('batch');
 var Emitter = require("emitter");
 var once = require('once');
 var autoscale = require('autoscale-canvas');
@@ -31,26 +30,19 @@ module.exports = function (el, opt, cb) {
 
 function detect(tasks, el, opt, cb) {
   var imgs = el.querySelectorAll('img');
-  var batch = new Batch();
-  batch.concurrency(opt.concurrency || 4);
   imgs = [].slice.call(imgs);
   imgs.forEach(function(img) {
     if (img.hasAttribute('data-src')) {
-      batch.push(function(done) {
-        var task = new Task(img, done);
-        tasks.push(task);
-      });
+      var task = new Task(img);
+      tasks.push(task);
+      task.once('error', cb || noob);
     }
-  })
-  batch.end(function(err) {
-    if(cb) cb(err);
   })
 }
 
-function Task(img, cb) {
-  if (! (this instanceof Task)) return new Task(img, cb);
+function Task(img) {
+  if (! (this instanceof Task)) return new Task(img);
   this.img = img;
-  this.cb = once(cb);
   var src = img.getAttribute('data-src');
   //ensure only once
   img.removeAttribute('data-src');
@@ -63,7 +55,10 @@ function Task(img, cb) {
   this.canvas.width = parseInt(styles(img).width, 10);
   this.canvas.heigth = parseInt(styles(img).height, 10);
   autoscale(this.canvas);
+  this.draw(0);
 }
+
+Emitter(Task.prototype);
 
 Task.prototype.onprogress = function (e) {
   var percent = e.percent;
@@ -91,7 +86,7 @@ Task.prototype.onerror = function (e) {
   var msg = !!e ? 'can\'t require' : 'image request error';
   var err = new Error(msg);
   err.el = this.img;
-  this.cb(err);
+  this.emit('error', err);
   this.unbind();
 }
 
@@ -108,7 +103,6 @@ Task.prototype.unbind = function () {
     this.loader.abort();
   }
   this.loader.off();
-  this.cb();
 }
 
 Task.prototype.draw = function (percent) {

@@ -8,7 +8,6 @@
     "component/removed": "*",
     "component/once": "*",
     "component/autoscale-canvas": "*",
-    "visionmedia/batch": "*",
     "component/emitter": "*",
     "ramitos/resize": "*"
   },
