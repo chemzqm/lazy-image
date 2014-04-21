@@ -563,168 +563,6 @@ module.exports = function(canvas){
 };
 });
 
-require.register("visionmedia~batch@0.5.0", function (exports, module) {
-/**
- * Module dependencies.
- */
-
-try {
-  var EventEmitter = require("events").EventEmitter;
-} catch (err) {
-  var Emitter = require("component~emitter@1.1.2");
-}
-
-/**
- * Noop.
- */
-
-function noop(){}
-
-/**
- * Expose `Batch`.
- */
-
-module.exports = Batch;
-
-/**
- * Create a new Batch.
- */
-
-function Batch() {
-  if (!(this instanceof Batch)) return new Batch;
-  this.fns = [];
-  this.concurrency(Infinity);
-  this.throws(true);
-  for (var i = 0, len = arguments.length; i < len; ++i) {
-    this.push(arguments[i]);
-  }
-}
-
-/**
- * Inherit from `EventEmitter.prototype`.
- */
-
-if (EventEmitter) {
-  Batch.prototype.__proto__ = EventEmitter.prototype;
-} else {
-  Emitter(Batch.prototype);
-}
-
-/**
- * Set concurrency to `n`.
- *
- * @param {Number} n
- * @return {Batch}
- * @api public
- */
-
-Batch.prototype.concurrency = function(n){
-  this.n = n;
-  return this;
-};
-
-/**
- * Queue a function.
- *
- * @param {Function} fn
- * @return {Batch}
- * @api public
- */
-
-Batch.prototype.push = function(fn){
-  this.fns.push(fn);
-  return this;
-};
-
-/**
- * Set wether Batch will or will not throw up.
- *
- * @param  {Boolean} throws
- * @return {Batch}
- * @api public
- */
-Batch.prototype.throws = function(throws) {
-  this.e = !!throws;
-  return this;
-};
-
-/**
- * Execute all queued functions in parallel,
- * executing `cb(err, results)`.
- *
- * @param {Function} cb
- * @return {Batch}
- * @api public
- */
-
-Batch.prototype.end = function(cb){
-  var self = this
-    , total = this.fns.length
-    , pending = total
-    , results = []
-    , errors = []
-    , cb = cb || noop
-    , fns = this.fns
-    , max = this.n
-    , throws = this.e
-    , index = 0
-    , done;
-
-  // empty
-  if (!fns.length) return cb(null, results);
-
-  // process
-  function next() {
-    var i = index++;
-    var fn = fns[i];
-    if (!fn) return;
-    var start = new Date;
-
-    try {
-      fn(callback);
-    } catch (err) {
-      callback(err);
-    }
-
-    function callback(err, res){
-      if (done) return;
-      if (err && throws) return done = true, cb(err);
-      var complete = total - pending + 1;
-      var end = new Date;
-
-      results[i] = res;
-      errors[i] = err;
-
-      self.emit('progress', {
-        index: i,
-        value: res,
-        error: err,
-        pending: pending,
-        total: total,
-        complete: complete,
-        percent: complete / total * 100 | 0,
-        start: start,
-        end: end,
-        duration: end - start
-      });
-
-      if (--pending) next()
-      else if(!throws) cb(errors, results);
-      else cb(null, results);
-    }
-  }
-
-  // concurrency
-  for (var i = 0; i < fns.length; i++) {
-    if (i == max) break;
-    next();
-  }
-
-  return this;
-};
-
-});
-
 require.register("ramitos~resize@master", function (exports, module) {
 var binds = {};
 
@@ -752,7 +590,6 @@ require.register("lazy-image", function (exports, module) {
 var XHRImage = require("component~xhr-image@master");
 var resize = require("ramitos~resize@master");
 var removed = require("component~removed@0.0.3");
-var Batch = require("visionmedia~batch@0.5.0");
 var Emitter = require("component~emitter@1.1.2");
 var once = require("component~once@0.0.1");
 var autoscale = require("component~autoscale-canvas@0.0.3");
@@ -782,26 +619,19 @@ module.exports = function (el, opt, cb) {
 
 function detect(tasks, el, opt, cb) {
   var imgs = el.querySelectorAll('img');
-  var batch = new Batch();
-  batch.concurrency(opt.concurrency || 4);
   imgs = [].slice.call(imgs);
   imgs.forEach(function(img) {
     if (img.hasAttribute('data-src')) {
-      batch.push(function(done) {
-        var task = new Task(img, done);
-        tasks.push(task);
-      });
+      var task = new Task(img);
+      tasks.push(task);
+      task.once('error', cb || noob);
     }
-  })
-  batch.end(function(err) {
-    if(cb) cb(err);
   })
 }
 
-function Task(img, cb) {
-  if (! (this instanceof Task)) return new Task(img, cb);
+function Task(img) {
+  if (! (this instanceof Task)) return new Task(img);
   this.img = img;
-  this.cb = once(cb);
   var src = img.getAttribute('data-src');
   //ensure only once
   img.removeAttribute('data-src');
@@ -814,7 +644,10 @@ function Task(img, cb) {
   this.canvas.width = parseInt(styles(img).width, 10);
   this.canvas.heigth = parseInt(styles(img).height, 10);
   autoscale(this.canvas);
+  this.draw(0);
 }
+
+Emitter(Task.prototype);
 
 Task.prototype.onprogress = function (e) {
   var percent = e.percent;
@@ -842,7 +675,7 @@ Task.prototype.onerror = function (e) {
   var msg = !!e ? 'can\'t require' : 'image request error';
   var err = new Error(msg);
   err.el = this.img;
-  this.cb(err);
+  this.emit('error', err);
   this.unbind();
 }
 
@@ -859,7 +692,6 @@ Task.prototype.unbind = function () {
     this.loader.abort();
   }
   this.loader.off();
-  this.cb();
 }
 
 Task.prototype.draw = function (percent) {
