@@ -1,7 +1,7 @@
 {
   "name": "lazy-image",
   "description": "lazy load image when it's shown when progress report",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "keywords": ["lazy", "image"],
   "dependencies": {
     "component/xhr-image": "*",
