@@ -1,0 +1,11 @@
+{
+  "name": "resize",
+  "twitter": "@ramitos",
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "src/resize.js",
+  "scripts": [
+    "src/resize.js"
+  ],
+  "repository": "ramitos/resize"
+}

@@ -1,0 +1,26 @@
+{
+  "name": "lazy-image",
+  "description": "lazy load image when it's shown when progress report",
+  "version": "0.0.1",
+  "keywords": ["lazy", "image"],
+  "dependencies": {
+    "component/xhr-image": "*",
+    "component/removed": "*",
+    "component/once": "*",
+    "component/autoscale-canvas": "*",
+    "visionmedia/batch": "*",
+    "component/emitter": "*",
+    "ramitos/resize": "*"
+  },
+  "development": {
+    "dependencies": {
+    }
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": [
+    "index.js"
+  ],
+  "demo": "http://chemzqm.github.io/lazy-image/",
+  "repository": "chemzqm/lazy-image"
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>lazy-image demo</title>
+  <script src="build/build.js"></script>
+  <style>
+    body {
+      padding-top: 50px;
+    }
+    #images {
+      padding: 0 15px;
+      margin: 0 auto;
+      width: 200px;
+    }
+    ul#images > li {
+      padding: 50px 0;
+      list-style: none;
+    }
+    ul#images > li~li {
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <ul id="images">
+  </ul>
+  <script>
+    var el = document.getElementById('images');
+    function create(i) {
+      var li  = document.createElement('li');
+      var img = document.createElement('img');
+      var url = 'http://lorempixel.com/400/400/sports/' + i + '/';
+      img.src = "javascript:void(0)";
+      img.setAttribute('data-src', url);
+      img.height = 100;
+      img.width = 100;
+      img.id = 'img-' + i;
+      li.appendChild(img);
+      el.appendChild(li);
+    }
+    for (var i = 0; i < 10; i++) {
+      create(i);
+    }
+    var lazy = require('lazy-image');
+    lazy(el, function(err) {
+      if(err) console.log(err);
+    });
+  </script>
+</body>
+</html>
